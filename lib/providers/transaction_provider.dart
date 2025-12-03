@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/transaction_model.dart';
-import '../services/hive_service.dart';
+import '../services/firebase_service.dart';
 
 class TransactionProvider with ChangeNotifier {
   List<TransactionModel> _transactions = [];
@@ -12,16 +12,17 @@ class TransactionProvider with ChangeNotifier {
   }
 
   void loadTransactions() {
-    final box = HiveService.getBox();
-    _transactions = box.values.toList();
-    notifyListeners();
+    // Listen to Firebase stream
+    FirebaseService.getTransactionsStream().listen((transactions) {
+      _transactions = transactions;
+      notifyListeners();
+    });
   }
 
-  void addTransaction(TransactionModel t) {
-    final box = HiveService.getBox();
-    box.add(t);
-    _transactions.add(t);
-    notifyListeners();
+  Future<void> addTransaction(TransactionModel t) async {
+    // Add to Firebase
+    await FirebaseService.addTransaction(t);
+    // The stream will automatically update _transactions
   }
 
   double get totalIncome => _transactions
